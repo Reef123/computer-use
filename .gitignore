@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+
+# secrets / env
+.env
+.env.*
+*.secret
+*.secrets
+
+# recorded runs (screenshots + UIA/DOM snapshots) — curated in, not blanket-committed
+captures/
+
+# macOS
+.DS_Store
+
+# architecture / design docs live in the private design tree, not this repo
+docs/
+*_spec.md
+[0-9][0-9]_*.md
+idea.md

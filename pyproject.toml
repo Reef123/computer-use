@@ -1,0 +1,13 @@
+[project]
+name = "vision-primary-computer-use"
+version = "0.0.1"
+description = "A vision-primary computer-use agent: per step, the lowest-cost measurement that clears the blocking uncertainty."
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
