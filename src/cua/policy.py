@@ -5,6 +5,9 @@ signals; it combines them. Each step: identify the uncertainty that most blocks
 a confident commit, emit the cheapest measurement that reduces it. Acting is the
 highest-cost measurement, taken only when no cheaper one would change the
 decision. When no estimate is trustworthy, escalate.
+
+The full-look baseline (`forced_probe=True`) is the SAME entry with one flag: it
+never takes the cheap skip. It is the A/B's other arm, not a second codebase.
 """
 from __future__ import annotations
 
@@ -109,6 +112,18 @@ def decide(belief: Belief, stakes: Stakes) -> Measurement:
     )
 
 
+def _forced_decision(observation: Observation, belief: Belief) -> Measurement:
+    """The full-look baseline arm (consolidated spec §2/§8): never take the cheap
+    skip. Spend a perception measurement each step, and escalate on the same
+    out-of-support condition the blended policy uses. Same policy entry, one flag."""
+    us = belief.uncertainties
+    if us and all(u.trust < TRUST_FLOOR for u in us):
+        return Measurement(Reducer.ESCALATE, reason="full-look baseline: out of support")
+    if isinstance(observation.structure, tuple) and observation.structure:
+        return Measurement(Reducer.PROBE, reason="full-look baseline: probe every step")
+    return Measurement(Reducer.LOOK, reason="full-look baseline: look every step")
+
+
 def policy(
     observation: Observation,
     belief: Belief,
@@ -116,14 +131,19 @@ def policy(
     *,
     estimate=crude_estimator,
     stakes=classify_stakes,
+    forced_probe: bool = False,
 ) -> tuple[Measurement, Belief]:
     """(observation, belief) -> (measurement, belief').
 
     Pure given pure `estimate` and `stakes`. The estimator (which computes the
     signals) and the stakes door are injected and swappable; the policy itself
-    computes nothing — it combines.
+    computes nothing — it combines. `forced_probe=True` selects the full-look
+    baseline arm for the A/B: one flag, one code path.
     """
     signals = estimate(observation, belief, intended_action)
     belief2 = update_belief(belief, observation, signals)
-    measurement = decide(belief2, stakes(intended_action))
+    if forced_probe:
+        measurement = _forced_decision(observation, belief2)
+    else:
+        measurement = decide(belief2, stakes(intended_action))
     return measurement, belief2
