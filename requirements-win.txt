@@ -1,0 +1,6 @@
+# Windows-only runtime dependencies for WinExecutor.
+# Install on the Windows VM: pip install -r requirements-win.txt
+# Do NOT install on macOS — the main package stays stdlib-only.
+mss>=9.0
+Pillow>=10.0
+uiautomation>=2.0.18
