@@ -1,0 +1,475 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T220602Z-0002.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": [
+          {
+            "id": "Edit",
+            "role": "MenuItemControl",
+            "name": "Edit",
+            "bounds": [
+              89,
+              90,
+              35,
+              31
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "invoke",
+              "expandcollapse",
+              "scrollitem"
+            ]
+          },
+          {
+            "id": "MenuBar",
+            "role": "MenuBarControl",
+            "name": "",
+            "bounds": [
+              46,
+              90,
+              128,
+              31
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "scrollitem"
+            ]
+          }
+        ]
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            104,
+            106,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T220607Z-0004.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": [
+          {
+            "id": "TextBlock",
+            "role": "TextControl",
+            "name": "Replace",
+            "bounds": [
+              102,
+              456,
+              104,
+              18
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "scrollitem",
+              "text"
+            ]
+          },
+          {
+            "id": "MenuItemControl:MenuFlyoutItem:Replace:(93, 451, 177, 28)",
+            "role": "MenuItemControl",
+            "name": "Replace",
+            "bounds": [
+              93,
+              451,
+              177,
+              28
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "invoke",
+              "scrollitem"
+            ]
+          },
+          {
+            "id": "MenuControl:MenuFlyout::(89, 121, 185, 495)",
+            "role": "MenuControl",
+            "name": "",
+            "bounds": [
+              89,
+              121,
+              185,
+              495
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "scrollitem",
+              "scroll"
+            ]
+          }
+        ]
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            120,
+            466,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T220611Z-0006.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": [
+          {
+            "id": "TextBlock",
+            "role": "TextControl",
+            "name": "Replace",
+            "bounds": [
+              102,
+              456,
+              104,
+              18
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "scrollitem",
+              "text"
+            ]
+          },
+          {
+            "id": "MenuItemControl:MenuFlyoutItem:Replace:(93, 451, 177, 28)",
+            "role": "MenuItemControl",
+            "name": "Replace",
+            "bounds": [
+              93,
+              451,
+              177,
+              28
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "invoke",
+              "scrollitem"
+            ]
+          },
+          {
+            "id": "MenuControl:MenuFlyout::(89, 121, 185, 495)",
+            "role": "MenuControl",
+            "name": "",
+            "bounds": [
+              89,
+              121,
+              185,
+              495
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "scrollitem",
+              "scroll"
+            ]
+          }
+        ]
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            120,
+            466,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T220616Z-0008.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": [
+          {
+            "id": "DocumentControl:RichEditD2DPT:Text editor:(46, 122, 759, 413)",
+            "role": "DocumentControl",
+            "name": "Text editor",
+            "bounds": [
+              46,
+              122,
+              759,
+              413
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "value",
+              "scroll",
+              "text",
+              "text2",
+              "textedit"
+            ]
+          },
+          {
+            "id": "PaneControl:#32769:Desktop 1:(0, 0, 1024, 768)",
+            "role": "PaneControl",
+            "name": "Desktop 1",
+            "bounds": [
+              0,
+              0,
+              1024,
+              768
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": []
+          }
+        ]
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            370,
+            157,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T220618Z-0009.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": null
+      },
+      "intended": {
+        "type": "type",
+        "target": null,
+        "arg": "red"
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T220621Z-0010.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": [
+          {
+            "id": "DocumentControl:RichEditD2DPT:Text editor:(46, 122, 759, 413)",
+            "role": "DocumentControl",
+            "name": "Text editor",
+            "bounds": [
+              46,
+              122,
+              759,
+              413
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "value",
+              "scroll",
+              "text",
+              "text2",
+              "textedit"
+            ]
+          },
+          {
+            "id": "PaneControl:#32769:Desktop 1:(0, 0, 1024, 768)",
+            "role": "PaneControl",
+            "name": "Desktop 1",
+            "bounds": [
+              0,
+              0,
+              1024,
+              768
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": []
+          }
+        ]
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            360,
+            195,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T220624Z-0011.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": null
+      },
+      "intended": {
+        "type": "type",
+        "target": null,
+        "arg": "yellow"
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T220626Z-0012.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": [
+          {
+            "id": "DocumentControl:RichEditD2DPT:Text editor:(46, 122, 759, 413)",
+            "role": "DocumentControl",
+            "name": "Text editor",
+            "bounds": [
+              46,
+              122,
+              759,
+              413
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "value",
+              "scroll",
+              "text",
+              "text2",
+              "textedit"
+            ]
+          },
+          {
+            "id": "PaneControl:#32769:Desktop 1:(0, 0, 1024, 768)",
+            "role": "PaneControl",
+            "name": "Desktop 1",
+            "bounds": [
+              0,
+              0,
+              1024,
+              768
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": []
+          }
+        ]
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            628,
+            195,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T220632Z-0014.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": [
+          {
+            "id": "DocumentControl:RichEditD2DPT:Text editor:(46, 122, 759, 413)",
+            "role": "DocumentControl",
+            "name": "Text editor",
+            "bounds": [
+              46,
+              122,
+              759,
+              413
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "value",
+              "scroll",
+              "text",
+              "text2",
+              "textedit"
+            ]
+          },
+          {
+            "id": "PaneControl:#32769:Desktop 1:(0, 0, 1024, 768)",
+            "role": "PaneControl",
+            "name": "Desktop 1",
+            "bounds": [
+              0,
+              0,
+              1024,
+              768
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": []
+          }
+        ]
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            651,
+            157,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    }
+  ]
+}

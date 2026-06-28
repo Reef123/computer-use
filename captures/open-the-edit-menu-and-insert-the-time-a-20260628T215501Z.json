@@ -1,0 +1,138 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T215506Z-0002.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": [
+          {
+            "id": "Edit",
+            "role": "MenuItemControl",
+            "name": "Edit",
+            "bounds": [
+              89,
+              90,
+              35,
+              31
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "invoke",
+              "expandcollapse",
+              "scrollitem"
+            ]
+          },
+          {
+            "id": "MenuBar",
+            "role": "MenuBarControl",
+            "name": "",
+            "bounds": [
+              46,
+              90,
+              128,
+              31
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "scrollitem"
+            ]
+          }
+        ]
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            104,
+            106,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T215511Z-0004.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": [
+          {
+            "id": "TextBlock",
+            "role": "TextControl",
+            "name": "Time/Date",
+            "bounds": [
+              102,
+              554,
+              104,
+              18
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "scrollitem",
+              "text"
+            ]
+          },
+          {
+            "id": "MenuItemControl:MenuFlyoutItem:Time/Date:(93, 549, 177, 28)",
+            "role": "MenuItemControl",
+            "name": "Time/Date",
+            "bounds": [
+              93,
+              549,
+              177,
+              28
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "invoke",
+              "scrollitem"
+            ]
+          },
+          {
+            "id": "MenuControl:MenuFlyout::(89, 121, 185, 495)",
+            "role": "MenuControl",
+            "name": "",
+            "bounds": [
+              89,
+              121,
+              185,
+              495
+            ],
+            "enabled": true,
+            "offscreen": false,
+            "patterns": [
+              "scrollitem",
+              "scroll"
+            ]
+          }
+        ]
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            128,
+            563,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    }
+  ]
+}

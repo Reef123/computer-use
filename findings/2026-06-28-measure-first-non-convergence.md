@@ -32,3 +32,15 @@ Fix: serialize the trace (belief updates) alongside steps, then this is self-dia
 ## Next
 Trace re-run → identify the blocking uncertainty → tune convergence → re-run the toggle, expecting
 ACT=1 and task complete.
+
+## Resolved (2026-06-28, same session)
+The root cause was simpler than the OUTCOME hypothesis above: the live loop **discarded the probe
+result**, and the estimator hardwired LOCATION off the always-None screenshot structure — so probing
+could never lower it. Two fixes:
+- `live.py`: fold the probe result into the observation and re-decide (commit 660a969).
+- `estimator.py`: no LOCATION for coordinate-less type/key actions (commit 4add2de).
+
+Re-verified live on the VM. The Auto-start toggle now acts (PAD); on Notepad: Time/Date, typing, and a
+full multi-step **Find & Replace** (red→yellow, **act=9**, correct result — "yellow green yellow blue
+yellow") all converge. Flagship demo lands.
+Capture: `captures/use-find-and-replace-to-replace-every-re-20260628T220554Z.json`.
