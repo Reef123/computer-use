@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T213109Z-0002.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": null
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            774,
+            204,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T213113Z-0003.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": null
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            774,
+            204,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T213120Z-0005.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": null
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            774,
+            204,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T213123Z-0006.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": null
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            774,
+            204,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T213129Z-0008.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": null
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            774,
+            204,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    },
+    {
+      "observation": {
+        "image_ref": "captures\\win-frame-20260628T213132Z-0009.png",
+        "coord_space": [
+          1024,
+          768
+        ],
+        "structure": null
+      },
+      "intended": {
+        "type": "click",
+        "target": {
+          "region": [
+            774,
+            204,
+            0,
+            0
+          ],
+          "marker_id": null
+        },
+        "arg": null
+      }
+    }
+  ]
+}
