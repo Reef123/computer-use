@@ -90,6 +90,36 @@ def test_map_action_submit_key_is_high_stakes():
     assert map_action({"action": "type", "text": "hi"}).type is ActionType.TYPE
 
 
+def test_unknown_action_is_withheld_fail_closed():
+    # an action the loop doesn't recognise must NOT be executed
+    stub = StubExecutor()
+    transport = FakeTransport([
+        _msg("tool_use", _tool("t1", {"action": "frobnicate", "x": 1})),
+        _msg("end_turn", {"type": "text", "text": "ok"}),
+    ])
+    result = run_live_session("x", stub, api_key="x", transport=transport, max_steps=4)
+    assert len(result.steps) == 0
+    assert "frobnicate" not in stub.actuated
+
+
+def test_one_state_changing_action_per_turn():
+    # two commits in one model turn -> only the first runs; the second is skipped
+    def confident(observation, belief, intended_action=None):
+        return {UncertaintyKind.STATE: (0.05, 0.3), UncertaintyKind.LOCATION: (0.05, 0.3)}
+
+    stub = StubExecutor()
+    transport = FakeTransport([
+        _msg("tool_use",
+             _tool("a", {"action": "left_click", "coordinate": [10, 10]}),
+             _tool("b", {"action": "left_click", "coordinate": [20, 20]})),
+        _msg("end_turn", {"type": "text", "text": "done"}),
+    ])
+    result = run_live_session("x", stub, api_key="x", estimate=confident, transport=transport, max_steps=4)
+    assert len(result.steps) == 1
+    assert result.steps[0].measurement.reducer is Reducer.ACT
+    assert stub.actuated.count("left_click") == 1
+
+
 def _main() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     demo = None

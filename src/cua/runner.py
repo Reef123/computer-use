@@ -46,6 +46,7 @@ class SessionResult:
     steps: list[StepRecord] = field(default_factory=list)
     belief: Belief = field(default_factory=Belief)
     trace: Trace = field(default_factory=Trace)
+    terminated: str = ""  # live runs: "model-finished" | "escalate" | "budget"
 
     def measurement_counts(self) -> dict[Reducer, int]:
         counts = {r: 0 for r in Reducer}

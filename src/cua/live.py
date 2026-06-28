@@ -2,9 +2,11 @@
 
 The model perceives a screenshot and proposes an action; OUR policy gates each
 COMMIT (click/type/key) before it executes — inserting a cheaper measurement
-(probe via structure) or escalating when out of support. A `screenshot` action
-the model requests is perception and executes directly. The `Executor` performs
-the action on the target (stub now; real screenshot + UIA + actuation on the VM).
+(probe via structure) or escalating when out of support. `screenshot` and a
+whitelist of non-commit actions execute directly; anything unknown is withheld
+(fail closed). At most one state-changing action runs per model turn. The
+`Executor` performs the action on the target (stub now; real screenshot + UIA +
+actuation on the VM).
 
 Raw HTTP via urllib keeps the package dependency-free (the stdlib-only ethos).
 `transport` is injectable, so the loop is unit-tested with no network. The API
@@ -28,7 +30,7 @@ API_URL = "https://api.anthropic.com/v1/messages"
 BETA = "computer-use-2025-11-24"
 TOOL_TYPE = "computer_20251124"
 
-# Computer-use action -> our intended-action type (conservative).
+# Commit (state-changing) actions -> our intended-action type. These are gated.
 _COMMIT_TYPES = {
     "left_click": ActionType.CLICK,
     "right_click": ActionType.CLICK,
@@ -40,12 +42,26 @@ _COMMIT_TYPES = {
     "scroll": ActionType.SCROLL,
     "key": ActionType.KEY,
 }
-_SUBMIT_KEYS = {"return", "enter", "kp_enter"}
+# Non-commit actions safe to execute directly (perception / cursor). Anything
+# NOT in _COMMIT_TYPES and NOT here is unknown -> withheld (fail closed).
+_NONCOMMIT = {"screenshot", "wait", "mouse_move", "cursor_position", "hold_key",
+              "left_mouse_down", "left_mouse_up"}
+
+# Conservative high-stakes keys/chords (the stakes door errs high).
+_HIGH_KEYS = {"return", "enter", "kp_enter", "delete"}
+_HIGH_CHORDS = ("alt+f4", "ctrl+w", "cmd+w", "ctrl+shift+w")
+
+
+def _is_high_key(text) -> bool:
+    t = str(text).strip().lower()
+    return t in _HIGH_KEYS or any(c in t for c in _HIGH_CHORDS)
 
 
 def map_action(action: dict) -> IntendedAction:
-    """Map a computer-use action dict to our intended action. A bare Enter/Return
-    keypress reads as a submit (the conservative stakes door)."""
+    """Map a computer-use commit action to our intended action. Destructive keys
+    (Enter/Delete/close chords) read as high stakes (the conservative door).
+    Target-by-label semantics — a click on a button named 'Delete' — needs UIA
+    and is the executor's job (see 04 brief / probe)."""
     kind = action.get("action", "")
     coord = action.get("coordinate")
     target = (
@@ -54,7 +70,7 @@ def map_action(action: dict) -> IntendedAction:
         else None
     )
     at = _COMMIT_TYPES.get(kind, ActionType.CLICK)
-    if kind == "key" and str(action.get("text", "")).strip().lower() in _SUBMIT_KEYS:
+    if kind == "key" and _is_high_key(action.get("text", "")):
         at = ActionType.SUBMIT
     return IntendedAction(at, target, arg=action.get("text"))
 
@@ -74,23 +90,30 @@ def _post(payload: dict, api_key: str) -> dict:
         with urllib.request.urlopen(req, timeout=90) as r:
             return json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8")
+        body = e.read().decode("utf-8", "replace")[:2000]
         try:
             return {"type": "error", "error": json.loads(body).get("error", {"message": body})}
         except json.JSONDecodeError:
-            return {"type": "error", "error": {"message": body}}
+            return {"type": "error", "error": {"message": f"HTTP {e.code}: {body}"}}
+    except (urllib.error.URLError, TimeoutError, OSError) as e:
+        return {"type": "error", "error": {"message": f"network error: {e}"}}
+    except json.JSONDecodeError as e:
+        return {"type": "error", "error": {"message": f"non-JSON response: {e}"}}
 
 
 def _image_result(tool_use_id: str, b64: str) -> dict:
     return {
-        "type": "tool_result",
-        "tool_use_id": tool_use_id,
+        "type": "tool_result", "tool_use_id": tool_use_id,
         "content": [{"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": b64}}],
     }
 
 
 def _text_result(tool_use_id: str, text: str) -> dict:
     return {"type": "tool_result", "tool_use_id": tool_use_id, "content": text}
+
+
+def _error_result(tool_use_id: str, text: str) -> dict:
+    return {"type": "tool_result", "tool_use_id": tool_use_id, "content": text, "is_error": True}
 
 
 def run_live_session(
@@ -106,9 +129,9 @@ def run_live_session(
     max_steps: int = 8,
     transport=_post,
 ) -> SessionResult:
-    """Drive the real computer-use loop: each model-proposed commit is gated by
-    our policy before the executor runs it. Screenshot actions execute directly.
-    Terminates on the model finishing, an escalate, or the step budget."""
+    """Drive the real computer-use loop. Each model-proposed commit is gated by
+    our policy; at most one state-changing action runs per turn; unknown actions
+    are withheld (fail closed). Terminates on model-finish, escalate, or budget."""
     api_key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
     trace = trace or Trace()
     belief = Belief()
@@ -118,6 +141,7 @@ def run_live_session(
         "display_width_px": 1024, "display_height_px": 768, "display_number": 1,
     }]
     messages: list[dict] = [{"role": "user", "content": task}]
+    terminated = "budget"
 
     for i in range(1, max_steps + 1):
         resp = transport({"model": model, "max_tokens": 1024, "tools": tools, "messages": messages}, api_key)
@@ -126,27 +150,38 @@ def run_live_session(
         messages.append({"role": "assistant", "content": resp.get("content", [])})
         tool_uses = [b for b in resp.get("content", []) if b.get("type") == "tool_use"]
         if resp.get("stop_reason") != "tool_use" or not tool_uses:
-            break  # the model finished its turn
+            terminated = "model-finished"
+            break
 
         results = []
+        acted = False       # at most one state-changing action per model turn
+        escalated = False
         for tu in tool_uses:
             action = tu.get("input", {}) or {}
             kind = action.get("action", "")
+            tid = tu.get("id")
 
-            if kind == "screenshot":  # perception — execute directly, no gate
+            if kind == "screenshot":  # perception — execute directly
                 obs = executor.screenshot()
                 trace.record(i, saw=obs.vision.image_ref, decided="look", did="screenshot",
                              why="model requested perception")
-                results.append(_image_result(tu["id"], executor.screenshot_b64()))
+                results.append(_image_result(tid, executor.screenshot_b64()))
                 continue
-
-            if kind not in _COMMIT_TYPES:  # non-commit (wait, mouse_move, cursor_position) — direct, no gate
+            if kind in _NONCOMMIT:  # known non-commit (wait, mouse_move, …) — direct
                 obs = executor.screenshot()
                 trace.record(i, saw=obs.vision.image_ref, decided="(direct)", did=kind, why="")
-                results.append(_text_result(tu["id"], executor.actuate(action)))
+                results.append(_text_result(tid, executor.actuate(action)))
+                continue
+            if kind not in _COMMIT_TYPES:  # unknown -> fail closed, never execute
+                trace.record(i, saw="-", decided="withheld", did=kind, why="unknown action (fail-closed)")
+                results.append(_error_result(tid, f"Unknown action '{kind}' withheld; not executed."))
                 continue
 
-            # a commit the model wants to make -> gate it through our policy
+            # a commit -> gate it, but at most one state-changing action per turn
+            if acted or escalated:
+                results.append(_text_result(tid, f"Skipped {kind}: one action per turn; re-observe before reissuing."))
+                continue
+
             intended = map_action(action)
             obs = executor.screenshot()
             measurement, belief = policy_fn(obs, belief, intended, estimate=estimate, stakes=stakes)
@@ -156,14 +191,23 @@ def run_live_session(
                 why=measurement.reason if measurement.reducer in (Reducer.PROBE, Reducer.ESCALATE) else "",
             )
             if measurement.reducer is Reducer.ESCALATE:
-                results.append(_text_result(tu["id"], "Action withheld: out of support, escalated to a human."))
-                return SessionResult(steps=steps, belief=belief, trace=trace)
+                escalated = True
+                results.append(_error_result(tid, f"Action '{kind}' withheld: out of support, escalated to a human; not executed."))
+                continue
             if measurement.reducer is Reducer.ACT:
-                results.append(_text_result(tu["id"], executor.actuate(action)))
-            else:  # probe / look / wait -> measure first, then let the model proceed
-                executor.probe(action)
-                results.append(_text_result(tu["id"], f"Verified before acting ({measurement.reducer.value}); proceed."))
+                results.append(_text_result(tid, executor.actuate(action)))
+                acted = True
+                continue
+            # measure-first (probe / look / wait): honest — the commit was NOT executed
+            detail = {"probe": "structure read", "look": "re-observed", "wait": "waited"}.get(
+                measurement.reducer.value, "measured")
+            executor.probe(action)
+            results.append(_text_result(
+                tid, f"Held {kind} for {measurement.reducer.value} ({detail}); NOT executed. Reissue if still intended."))
 
         messages.append({"role": "user", "content": results})
+        if escalated:
+            terminated = "escalate"
+            break
 
-    return SessionResult(steps=steps, belief=belief, trace=trace)
+    return SessionResult(steps=steps, belief=belief, trace=trace, terminated=terminated)
