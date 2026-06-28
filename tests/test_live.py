@@ -144,6 +144,21 @@ def test_probe_resolves_and_converges_to_act():
     assert stub.actuated.count("left_click") == 1
 
 
+def test_type_action_converges_without_a_location_probe():
+    # type/key actions have no coordinate -> nothing to probe. The estimator must
+    # not raise LOCATION for them, or they loop forever (the second S147 gap). With
+    # no LOCATION, only STATE (0.4) remains, which is under the low-stakes bar -> ACT.
+    stub = StubExecutor()
+    transport = FakeTransport([
+        _msg("tool_use", _tool("t1", {"action": "type", "text": "hello world"})),
+        _msg("end_turn", {"type": "text", "text": "typed"}),
+    ])
+    result = run_live_session("type hello", stub, api_key="x",
+                              transport=transport, max_steps=4)
+    assert result.steps[-1].measurement.reducer is Reducer.ACT
+    assert "type" in stub.actuated
+
+
 def _main() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     demo = None

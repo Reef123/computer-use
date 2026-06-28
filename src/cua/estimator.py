@@ -28,11 +28,17 @@ def crude_estimator(
     ordinally. Read this as a stub, not a model.
     """
     signals: Signals = {UncertaintyKind.STATE: (0.4, _LOW_TRUST)}
-    # Location is harder to pin when structure can't help (canvas / no tree).
-    if observation.structure is EMPTY or observation.structure is None:
-        signals[UncertaintyKind.LOCATION] = (0.6, _LOW_TRUST)
-    else:
-        signals[UncertaintyKind.LOCATION] = (0.3, _LOW_TRUST)
+    # LOCATION applies only to actions that target a screen POINT. Coordinate-less
+    # actions (type / key) go to the focused control — there is no location to pin,
+    # so raising LOCATION here would demand an unanswerable probe (no point to read)
+    # and the action could never converge to ACT (S147: type/key non-convergence).
+    targets_a_point = intended_action is not None and intended_action.target is not None
+    if targets_a_point:
+        # Location is harder to pin when structure can't help (canvas / no tree).
+        if observation.structure is EMPTY or observation.structure is None:
+            signals[UncertaintyKind.LOCATION] = (0.6, _LOW_TRUST)
+        else:
+            signals[UncertaintyKind.LOCATION] = (0.3, _LOW_TRUST)
     return signals
 
 
