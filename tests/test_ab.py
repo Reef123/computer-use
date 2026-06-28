@@ -12,7 +12,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from cua.ab import _forced_policy, compare
+from cua.ab import _forced_policy, compare, compare_capture
 from cua.fixtures import replay_session
 from cua.fixtures.form_fill import DEFAULT_ORACLE, NAME, build_capture
 from cua.runner import run_session
@@ -43,6 +43,26 @@ def test_full_look_arm_never_cheap_commits():
     backend, proposer, estimate = replay_session(build_capture())
     forced = run_session(backend, proposer, estimate=estimate, policy_fn=_forced_policy)
     assert all(s.measurement.reducer is not Reducer.ACT for s in forced.steps)
+
+
+def test_compare_capture_accepts_real_load_capture_tuples():
+    # The real-capture path: load_capture() yields (Observation, IntendedAction|None)
+    # tuples. compare_capture must accept them — the fixture-only compare() reaches
+    # for .observation/.signals and crashes on these. Two synthetic recorded steps.
+    from cua.types import (
+        ActionType, Element, IntendedAction, Observation, Target, Vision,
+    )
+    recs = [
+        (Observation(vision=Vision("f1.png", (1024, 768)),
+                     structure=(Element("b", "Button", "Replace all", (10, 10, 20, 20)),)),
+         IntendedAction(ActionType.CLICK, Target(region=(15, 15, 0, 0)))),
+        (Observation(vision=Vision("f2.png", (1024, 768)), structure=None),
+         IntendedAction(ActionType.TYPE, None, arg="hi")),
+    ]
+    oracle = {"f1.png": True}  # the click is a must-measure-before-commit state
+    rep = compare_capture(recs, oracle)
+    assert rep.forced_cost > rep.blended_cost      # baseline measures; blended acts
+    assert isinstance(rep.passes_kill_question, bool)
 
 
 def _main() -> int:

@@ -68,19 +68,31 @@ class AbReport:
         )
 
 
-def compare(capture: list[CaptureStep], oracle: Oracle, *, max_steps: int = 64) -> AbReport:
-    """Run both arms over the same capture and report the kill-question numbers."""
-    backend_b, proposer_b, estimate_b = replay_session(capture)
+def _ab_over(make_replay, oracle: Oracle, max_steps: int) -> AbReport:
+    """Run both arms over the same replay source and score the kill question. The
+    replay is built twice (once per arm) so the two runs never share belief state."""
+    backend_b, proposer_b, estimate_b = make_replay()
     blended = run_session(backend_b, proposer_b, estimate=estimate_b, max_steps=max_steps)
 
-    backend_f, proposer_f, estimate_f = replay_session(capture)
+    backend_f, proposer_f, estimate_f = make_replay()
     forced = run_session(
         backend_f, proposer_f, estimate=estimate_f, policy_fn=_forced_policy, max_steps=max_steps
     )
-
     return AbReport(
         blended_cost=blended.perception_cost(),
         forced_cost=forced.perception_cost(),
         blended_confident_wrong=_confident_wrong(blended, oracle),
         forced_confident_wrong=_confident_wrong(forced, oracle),
     )
+
+
+def compare(capture: list[CaptureStep], oracle: Oracle, *, max_steps: int = 64) -> AbReport:
+    """Run both arms over a FIXTURE capture (CaptureStep list with scripted signals)."""
+    return _ab_over(lambda: replay_session(capture), oracle, max_steps)
+
+
+def compare_capture(records, oracle: Oracle, *, max_steps: int = 64) -> AbReport:
+    """Run both arms over a REAL recorded capture (the tuples from load_capture()).
+    Replays through crude_estimator re-derived from each recorded observation."""
+    from .capture import replay_from_capture  # local import avoids an import cycle
+    return _ab_over(lambda: replay_from_capture(records), oracle, max_steps)
