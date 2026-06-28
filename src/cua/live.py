@@ -18,13 +18,14 @@ import json
 import os
 import urllib.error
 import urllib.request
+from dataclasses import replace
 
 from .estimator import crude_estimator
 from .policy import classify_stakes
 from .policy import policy as decide_policy
 from .runner import SessionResult, StepRecord
 from .trace import Trace
-from .types import ActionType, Belief, IntendedAction, Reducer, Target
+from .types import EMPTY, ActionType, Belief, IntendedAction, Reducer, Target
 
 API_URL = "https://api.anthropic.com/v1/messages"
 BETA = "computer-use-2025-11-24"
@@ -185,10 +186,26 @@ def run_live_session(
             intended = map_action(action)
             obs = executor.screenshot()
             measurement, belief = policy_fn(obs, belief, intended, estimate=estimate, stakes=stakes)
+
+            # Measure-first WITH a feedback path. If the policy wants a PROBE, take
+            # it, FOLD THE RESULT into the observation, and re-decide. A probe that
+            # returns real structure drops LOCATION below the act bar and converts
+            # to ACT this same turn (still one state-changing action). Without this
+            # fold the probe result is discarded and measure-first loops forever —
+            # the S147 non-convergence bug (PROBE x6, never ACT). An EMPTY/canvas
+            # probe finds no usable structure, so it still holds honestly.
+            if measurement.reducer is Reducer.PROBE:
+                probed = executor.probe(action)
+                if probed is not None and probed is not EMPTY and probed:
+                    obs = replace(obs, structure=probed)
+                    measurement, belief = policy_fn(
+                        obs, belief, intended, estimate=estimate, stakes=stakes)
+
+            # Record exactly one step per gated action: its resolved decision.
             steps.append(StepRecord(len(steps) + 1, obs, intended, measurement))
             trace.record(
                 i, saw=obs.vision.image_ref, decided=measurement.reducer.value, did=kind,
-                why=measurement.reason if measurement.reducer in (Reducer.PROBE, Reducer.ESCALATE) else "",
+                why=measurement.reason if measurement.reducer in (Reducer.PROBE, Reducer.ESCALATE, Reducer.ACT) else "",
             )
             if measurement.reducer is Reducer.ESCALATE:
                 escalated = True
@@ -198,12 +215,10 @@ def run_live_session(
                 results.append(_text_result(tid, executor.actuate(action)))
                 acted = True
                 continue
-            # measure-first (probe / look / wait): honest — the commit was NOT executed
-            detail = {"probe": "structure read", "look": "re-observed", "wait": "waited"}.get(
-                measurement.reducer.value, "measured")
-            executor.probe(action)
+            # Still measuring (look / wait, or a probe that found no usable
+            # structure): honest — the commit was NOT executed; ask for a reissue.
             results.append(_text_result(
-                tid, f"Held {kind} for {measurement.reducer.value} ({detail}); NOT executed. Reissue if still intended."))
+                tid, f"Held {kind} for {measurement.reducer.value}; measured, NOT executed. Reissue if still intended."))
 
         messages.append({"role": "user", "content": results})
         if escalated:

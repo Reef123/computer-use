@@ -120,6 +120,30 @@ def test_one_state_changing_action_per_turn():
     assert stub.actuated.count("left_click") == 1
 
 
+def test_probe_resolves_and_converges_to_act():
+    # S147 regression: on the first real capture the model proposed the SAME
+    # checkbox click 6x, the policy PROBEd every time, and the probe result was
+    # discarded -> LOCATION stayed 0.6 -> it never crossed to ACT. With the
+    # feedback fold, a probe that returns real structure drops LOCATION to 0.3
+    # and converges to ACT in one turn — using the DEFAULT crude estimator.
+    from cua.types import Element
+
+    class ProbingExecutor(StubExecutor):
+        def probe(self, action):
+            return (Element(id="chk", role="CheckBox",
+                            name="Auto-start application", bounds=(770, 200, 16, 16)),)
+
+    stub = ProbingExecutor()
+    transport = FakeTransport([
+        _msg("tool_use", _tool("t1", {"action": "left_click", "coordinate": [774, 204]})),
+        _msg("end_turn", {"type": "text", "text": "done"}),
+    ])
+    result = run_live_session("toggle the checkbox", stub, api_key="x",
+                              transport=transport, max_steps=6)
+    assert result.steps[-1].measurement.reducer is Reducer.ACT
+    assert stub.actuated.count("left_click") == 1
+
+
 def _main() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     demo = None
