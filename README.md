@@ -1,110 +1,117 @@
 # A computer-use agent, and where the evidence took it
 
-A computer-use agent that drives a real Windows machine, and the harness around it
-that decides how much to check before each action, and when to slow down before
-something it can't undo.
-
-It is not a finished product. It is a working instrument and an honest record of
-testing one idea against a real machine, watching the main assumption fail, and
-following the evidence somewhere sharper. The commit history and `findings/` are the
-trail.
+This is a computer-use agent that drives a Windows machine. A harness sits around it. The
+harness decides how much to check before each action. It also decides when to slow down
+before something it cannot undo.
 
 ## The vision
 
-One idea: measure how unsure you are before you act, and spend the least it takes to
-settle it.
+Most agents blindly follow the model.
 
-Most agents do whatever the model says and hope. This one checks first. Each step it
-asks: what am I most unsure about, and what is the cheapest way to settle it? It acts
-only when nothing cheaper would change its mind. Acting is the last move, because it is
-the only one that changes the world.
+My idea: use a harness to measure uncertainty before action. Do it as cheaply as
+possible. That saves the agent from actions it cannot reverse.
 
 ## The ladder
 
-"The least it takes" means a real ladder, cheapest to dearest:
+"The least it takes" means like a ladder. Bottom is cheap. Top is expensive.
 
-1. Look again at the screen it already has. Free.
-2. Probe one spot. Ask the accessibility tree what is under the cursor. Cheap, one local call.
-3. Wait for the screen to settle. Cheap.
-4. Resample the model. Ask it a few times and see if it agrees with itself. Dear, several model calls.
-5. Act. Dearest, because you cannot take it back.
+1. Look again at the screen it already has.
+2. Probe one spot. Ask the accessibility tree what is under the cursor.
+3. Resample the model. Ask it a few times and see if it agrees with itself. Dear, several model calls.
+4. Act.
 
-Take the lowest rung that settles the doubt, and climb only if you must. Acting is just
-the top rung, so "don't act until you have to" falls out for free.
+Take the lowest rung that settles the doubt. Go to the next level only if you must. The
+agent never acts until it has to.
 
 ## The assumption
 
-It all rests on one assumption, and I named it before writing any code: the agent has
-to know when it is unsure. Cheaply, every step. If it cannot tell confident from
+The agent has to know when it is unsure. Cheaply. If it cannot tell confident from
 uncertain on the spot, there is nothing to gate on.
 
-The API gives no confidence signal, so the bet was to read it from the outside.
-Resample the model on the same screen and watch how much its answers move. A lot of
-movement means it is guessing. That was the assumption everything stood on.
+The API gives no confidence signal. So I read it from the outside. Resample the model on
+the same screen. Watch how much its answers move. A lot of movement means it is guessing.
+Everything stood on that.
 
 ## What I built to test it
 
-A pure policy core that turns a belief about what is unknown into one decision. A live
-loop against the real Computer Use API, where the model proposes and the policy gates
-each commit. A real executor on a Windows VM: screen capture, accessibility probe,
-actuation. And an A/B that runs the same task two ways, the real policy against looking
-every step, and asks one question: cheaper, without committing wrong more often?
+Four pieces.
 
-To put it on a real machine, it drove Notepad through a multi-step find-and-replace,
+A policy core. It turns a belief about what is unknown into one decision. Pure and
+testable.
+
+A live loop against the real Computer Use API. The model proposes. The policy gates each
+commit.
+
+An executor on a Windows VM. Screen capture, accessibility probe, actuation.
+
+An A/B. It runs the same task two ways: my policy against looking every step. One
+question. Cheaper, without committing wrong more often?
+
+Then I put it on a real machine. It drove Notepad through a multi-step find-and-replace,
 end to end.
 
 ## The capture
 
-A run isn't a thing that happens once and disappears. Every run records what it saw,
-what it did, and why it decided each step. That file is the run, frozen.
+Every run records what it saw, what it did, and why it decided each step. That file is
+the run, frozen.
 
-After that the machine is out of it. Replay the recording offline, re-ask the model
-what it would do on those exact screens, run the A/B, read step by step why it looked.
-No VM, no live screen. Every finding here came from interrogating one recorded run from
-angles I didn't have in mind when I recorded it.
+After that the machine is out of it. Replay the recording offline. Re-ask the model what
+it would do on those exact screens. Run the A/B. Read step by step why it looked. No VM.
+No live screen. Every finding here came from one recorded run, questioned from angles I
+had not thought of when I recorded it.
 
 ## What the evidence said
 
-The A/B came back: the cheap policy was far cheaper, and it committed the one
-consequential action blind. It failed on safety, not cost.
+The A/B came back. The cheap policy was far cheaper. It also committed the one
+consequential action blind. The failure was safety.
 
-So I tested the assumption underneath everything. Resampling came back flat, near zero
-on every step, including the consequential one. The reason is structural: resampling
-measures whether the model knows what to do, not whether the action is safe to do. The
-model is as sure clicking "Replace All" as clicking a menu.
+So I tested the assumption under everything. Resampling came back flat. Near zero on every
+step, including the consequential one. The reason is structural. Resampling measures
+whether the model knows what to do. It says nothing about whether the action is safe to
+do. The model is as sure clicking "Replace All" as clicking a menu.
 
 ## Where it moved
 
-The binding constraint isn't uncertainty. It's consequence. And the two live in
-different places: uncertainty in the model's head, consequence out in the world. The
-model's confidence tells you nothing about whether an action can be undone. The most
-dangerous action is the one it is surest about.
+The thing that matters is consequence. Can the action be undone. Uncertainty and
+consequence live in different places. Uncertainty is in the model's head. Consequence is
+out in the world. The model's confidence tells you nothing about whether an action can be
+undone. The most dangerous action is the one it is surest about.
 
-I probed that with small tasks on a real screen:
+Two tests I performed, both destructive:
 
-- **Bold a word** (reversible). It just acted. Correct.
-- **Replace everything** (a click on a button). It just acted too, same confidence. The danger was in the button, not the action type, so nothing caught it.
-- **Delete a word.** "Delete" is a word the stakes door knows, so it slowed down and looked first. But the gate was a wall it couldn't pass, so the model deleted with a different key instead. Blocking a dangerous action type is bypassable.
-- **"Delete the yellow," with two yellows on screen.** It deleted both, and never once asked which. The trace shows it never registered the ambiguity at all. Faced with "which one," it did "all," silently. Ambiguity made it more destructive, not more careful.
+- **Find and Replace everything.** It just acted, full confidence. The danger sat in the button. The action type looked harmless. Nothing caught it.
+- **"Delete the yellow," with two yellows on screen.** It deleted both. It never asked which. Faced with "which one," it chose "all." Ambiguity made it worse.
 
-So the safety problem isn't that the model fumbles. It is that the model is calm and
-sure right up to the irreversible thing, and neither its confidence nor the action type
-tells you the thing is irreversible.
+The first shows danger hiding in a harmless-looking action. The second shows it getting
+more reckless under ambiguity.
+
+The safety problem is not a fumbling model. The model is calm and sure right up to the
+irreversible thing. Neither its confidence nor the action type tells you the thing is
+irreversible.
+
+## Two reads
+
+The agent had one read: how sure am I? It needed two.
+
+Does it know what to do? Ask it a few times. If the answers jump around, it is guessing.
+
+Can it be undone? The model cannot tell you.
+
+One read the model can do. One it cannot. So I built a router. Easy steps get a small
+model. Hard steps get a big one. Safe steps act. Risky steps slow down.
 
 ## The open problem
 
 What is a cheap, general signal of consequence, when the model's own confidence is no
-help? Reading it off the control before acting is cheap but breaks on custom UI. Letting
-the app reveal it, through a confirm dialog, is reliable but arrives after you've
-started. I haven't solved this. It is the part that decides whether the agent can safely
-touch a real machine.
+help? Reading it off the control before acting is cheap. It breaks on custom UI. Letting
+the app reveal it, through a confirm dialog, is reliable but late. I have not solved this.
 
 ## Where it's going
 
-Consequence read from the world's own cues, the control's label and role, whether there
-is an undo, inside a router that also picks how much model and how much caution to spend
-on each step. The probe that already finds "green" can read "Replace all, no undo" just
-as easily. Same loop, same probe, one more thing to listen for.
+Two builds. First the second read: the probe that already finds "green" (from the test)
+on a screen can read "Replace all, no undo" the same way. Same loop, same probe, one more
+thing to listen for. Then the router around both reads, so the easy steps run cheap and
+the rare dangerous ones get the slow, careful path.
 
 ## Run
 
