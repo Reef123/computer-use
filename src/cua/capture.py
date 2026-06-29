@@ -83,14 +83,40 @@ def _ia_from_json(d) -> IntendedAction | None:
 
 
 def save_run(result: SessionResult, path: str) -> None:
-    """Write the gated steps of a live run to a replayable JSON capture."""
-    steps = [{"observation": _obs_to_json(s.observation), "intended": _ia_to_json(s.intended)}
-             for s in result.steps]
+    """Write the gated steps of a live run to a replayable JSON capture.
+
+    Version 2 adds per-step decision provenance (``decided``, ``reason``) and a
+    top-level ``trace`` that covers *every* perception + commit step — including
+    non-gated screenshots — so the full "why it looked / why it acted" log is
+    captured alongside the committed actions.  Existing fields are untouched so
+    v2 files remain loadable by ``load_capture`` and ``replay_from_capture``.
+    """
+    steps = [
+        {
+            "observation": _obs_to_json(s.observation),
+            "intended": _ia_to_json(s.intended),
+            "decided": s.measurement.reducer.value,
+            "reason": s.measurement.reason,
+        }
+        for s in result.steps
+    ]
+    trace = [
+        {"saw": r.saw, "decided": r.decided, "did": r.did, "why": r.why}
+        for r in result.trace.rows
+    ]
     with open(path, "w") as f:
-        json.dump({"version": 1, "steps": steps}, f, indent=2)
+        json.dump({"version": 2, "steps": steps, "trace": trace}, f, indent=2)
 
 
 def load_capture(path: str) -> list[tuple[Observation, IntendedAction | None]]:
+    """Load a capture (v1 or v2) and return obs+intended pairs for replay.
+
+    The v2 fields (``decided``, ``reason``, top-level ``trace``) are present in
+    the JSON but are intentionally not returned here — ``replay_from_capture``
+    and ``ab.compare_capture`` re-derive signals via ``crude_estimator`` and
+    must ignore the stored policy decisions so replay stays deterministic.
+    Missing v2 keys in a v1 file cause no error.
+    """
     with open(path) as f:
         data = json.load(f)
     return [(_obs_from_json(r["observation"]), _ia_from_json(r["intended"])) for r in data["steps"]]
