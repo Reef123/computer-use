@@ -25,3 +25,6 @@ docs/
 *_spec.md
 [0-9][0-9]_*.md
 idea.md
+
+# ...except the curated design docs published under design/
+!design/*.md
